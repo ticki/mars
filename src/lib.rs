@@ -123,8 +123,8 @@ impl<'a, F> Bot<F> where F: 'static + Sync + Send + Fn(Request) -> Response<'a> 
     }
 
     /// Initialize the bot.
-    pub fn init(self) -> Result<(), hyper::Error> {
-        try!(try!(hyper::Server::http("127.0.0.1:80")).handle(move |mut req: hyper::server::Request, mut res: hyper::server::Response| {
+    pub fn init(self, ip: &str) -> Result<(), hyper::Error> {
+        try!(try!(hyper::Server::http(ip)).handle(move |mut req: hyper::server::Request, mut res: hyper::server::Response| {
             let mut vec = Vec::new();
             if req.read_to_end(&mut vec).is_err() {
                 *res.status_mut() = hyper::BadRequest;

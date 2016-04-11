@@ -7,5 +7,5 @@ fn main() {
         username: Some("pong-bot"),
         text: "pong".into(),
         icon_url: Some("https://i.ytimg.com/vi/dQw4w9WgXcQ/mqdefault.jpg"),
-    }).init().unwrap();
+    }).init("127.0.0.1:80").unwrap();
 }
