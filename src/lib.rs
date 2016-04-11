@@ -7,6 +7,20 @@ use url::form_urlencoded as post;
 
 use std::io::{self, Write, Read};
 
+/// The trigger word ro command.
+pub enum Trigger {
+    /// A slash command.
+    Command(String),
+    /// A trigger word.
+    Word(String),
+}
+
+impl Default for Trigger {
+    fn default() -> Trigger {
+        Trigger::Word(String::new())
+    }
+}
+
 /// A Mattermost request.
 ///
 /// These are often sent by the Mattermost server, due to being triggered by a slash command or
@@ -28,12 +42,12 @@ pub struct Request {
     pub timestamp: String,
     /// The API token.
     pub token: String,
-    /// The word which have triggered this request.
-    pub trigger_word: String,
+    /// The trigger of this request.
+    pub trigger: Trigger,
     /// The trigger user's alphanumeric identifier.
     pub user_id: String,
     /// The trigger user's username.
-    pub user_name: String,
+    pub username: String,
 }
 
 impl Request {
@@ -50,9 +64,10 @@ impl Request {
                 "text" => req.text = b,
                 "timestamp" => req.timestamp = b,
                 "token" => req.token = b,
-                "trigger_word" => req.trigger_word = b,
+                "trigger_word" => req.trigger = Trigger::Word(b),
+                "command" => req.trigger = Trigger::Command(b),
                 "user_id" => req.user_id = b,
-                "user_name" => req.user_name = b,
+                "user_name" => req.username = b,
                 _ => (),
             }
         }
@@ -95,13 +110,15 @@ impl<'a> Response<'a> {
 /// A Mattermost bot.
 pub struct Bot<F> {
     handler: F,
+    token: &'static str,
 }
 
 impl<'a, F> Bot<F> where F: 'static + Sync + Send + Fn(Request) -> Response<'a> {
     /// Create a new bot with a given handler.
-    pub fn new(handler: F) -> Bot<F> {
+    pub fn new(token: &'static str, handler: F) -> Bot<F> {
         Bot {
             handler: handler,
+            token: token,
         }
     }
 
@@ -114,8 +131,16 @@ impl<'a, F> Bot<F> where F: 'static + Sync + Send + Fn(Request) -> Response<'a> 
                 return;
             }
 
+            let trig = Request::from_bytes(&vec);
+            if &trig.token != self.token {
+                // Token mismatch.
+                *res.status_mut() = hyper::status::StatusCode::Unauthorized;
+                return;
+            }
+
+
             if let Ok(res) = res.start() {
-                let _ = (self.handler)(Request::from_bytes(&vec)).send(res);
+                let _ = (self.handler)(trig).send(res);
             }
 
         }));
