@@ -5,6 +5,7 @@ extern crate url;
 
 use url::form_urlencoded as post;
 
+use std::error::Error;
 use std::io::{self, Write, Read};
 
 /// The trigger word ro command.
@@ -126,13 +127,23 @@ impl<'a, F> Bot<F> where F: 'static + Sync + Send + Fn(Request) -> Response<'a> 
     pub fn init(self, ip: &str) -> Result<(), hyper::Error> {
         try!(try!(hyper::Server::http(ip)).handle(move |mut req: hyper::server::Request, mut res: hyper::server::Response| {
             let mut vec = Vec::new();
-            if req.read_to_end(&mut vec).is_err() {
+            if let Err(err) = req.read_to_end(&mut vec) {
+                let stderr = io::stderr();
+                let mut stderr = stderr.lock();
+
+                let _ = stderr.write_all(b"WARN: ");
+                let _ = stderr.write_all(err.description().as_bytes());
+                let _ = stderr.write_all(b"\n");
+
                 *res.status_mut() = hyper::BadRequest;
                 return;
             }
 
             let trig = Request::from_bytes(&vec);
             if &trig.token != self.token {
+                let stderr = io::stderr();
+                let _ = stderr.lock().write_all(b"WARN: token mismatch\n");
+
                 // Token mismatch.
                 *res.status_mut() = hyper::status::StatusCode::Unauthorized;
                 return;
