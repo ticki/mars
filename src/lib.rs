@@ -1,11 +1,13 @@
 #![feature(str_escape)]
 
+extern crate extra;
 extern crate hyper;
 extern crate url;
 
 use url::form_urlencoded as post;
 
-use std::error::Error;
+use extra::option::OptionalExt;
+
 use std::io::{self, Write, Read};
 
 /// The trigger word ro command.
@@ -126,23 +128,17 @@ impl<'a, F> Bot<F> where F: 'static + Sync + Send + Fn(Request) -> Response<'a> 
     /// Initialize the bot.
     pub fn init(self, ip: &str) -> Result<(), hyper::Error> {
         try!(try!(hyper::Server::http(ip)).handle(move |mut req: hyper::server::Request, mut res: hyper::server::Response| {
+            let mut stderr = io::stderr();
             let mut vec = Vec::new();
-            if let Err(err) = req.read_to_end(&mut vec) {
-                let stderr = io::stderr();
-                let mut stderr = stderr.lock();
 
-                let _ = stderr.write_all(b"WARN: ");
-                let _ = stderr.write_all(err.description().as_bytes());
-                let _ = stderr.write_all(b"\n");
-
+            if let None = req.read_to_end(&mut vec).warn(&mut stderr) {
                 *res.status_mut() = hyper::BadRequest;
                 return;
             }
 
             let trig = Request::from_bytes(&vec);
             if &trig.token != self.token {
-                let stderr = io::stderr();
-                let _ = stderr.lock().write_all(b"WARN: token mismatch\n");
+                let _ = stderr.write_all(b"warning: token mismatch.");
 
                 // Token mismatch.
                 *res.status_mut() = hyper::status::StatusCode::Unauthorized;
@@ -150,10 +146,9 @@ impl<'a, F> Bot<F> where F: 'static + Sync + Send + Fn(Request) -> Response<'a> 
             }
 
 
-            if let Ok(res) = res.start() {
-                let _ = (self.handler)(trig).send(res);
+            if let Some(res) = res.start().warn(&mut stderr) {
+                (self.handler)(trig).send(res).warn(&mut stderr);
             }
-
         }));
 
         Ok(())

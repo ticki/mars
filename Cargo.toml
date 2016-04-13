@@ -9,3 +9,6 @@ hyper = "0.8.0"
 [dependencies.url]
 git = "https://github.com/servo/rust-url"
 features = ["query_encoding"]
+
+[dependencies.extra]
+git = "https://github.com/redox-os/libextra"
