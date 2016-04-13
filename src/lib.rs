@@ -10,20 +10,6 @@ use extra::option::OptionalExt;
 
 use std::io::{self, Write, Read};
 
-/// The trigger word ro command.
-pub enum Trigger {
-    /// A slash command.
-    Command(String),
-    /// A trigger word.
-    Word(String),
-}
-
-impl Default for Trigger {
-    fn default() -> Trigger {
-        Trigger::Word(String::new())
-    }
-}
-
 /// A Mattermost request.
 ///
 /// These are often sent by the Mattermost server, due to being triggered by a slash command or
@@ -46,7 +32,7 @@ pub struct Request {
     /// The API token.
     pub token: String,
     /// The trigger of this request.
-    pub trigger: Trigger,
+    pub trigger: String,
     /// The trigger user's alphanumeric identifier.
     pub user_id: String,
     /// The trigger user's username.
@@ -67,8 +53,7 @@ impl Request {
                 "text" => req.text = b,
                 "timestamp" => req.timestamp = b,
                 "token" => req.token = b,
-                "trigger_word" => req.trigger = Trigger::Word(b),
-                "command" => req.trigger = Trigger::Command(b),
+                "trigger_word" => req.trigger = b,
                 "user_id" => req.user_id = b,
                 "user_name" => req.username = b,
                 _ => (),
