@@ -8,6 +8,7 @@ use url::form_urlencoded as post;
 
 use extra::option::OptionalExt;
 
+use std::borrow::Cow;
 use std::io::{self, Write, Read};
 
 /// A Mattermost request.
@@ -15,37 +16,53 @@ use std::io::{self, Write, Read};
 /// These are often sent by the Mattermost server, due to being triggered by a slash command or
 /// a keyword. To see how to configure it, see the [Mattermost
 /// docs](http://docs.mattermost.com/developer/webhooks-outgoing.html).
-#[derive(Default)]
-pub struct Request {
+pub struct Request<'a> {
     /// The alphanumeric channel identifier.
-    pub channel_id: String,
+    pub channel_id: Cow<'a, str>,
     /// The name of the channel.
-    pub channel_name: String,
+    pub channel_name: Cow<'a, str>,
     /// The domain name of the team.
-    pub team_domain: String,
+    pub team_domain: Cow<'a, str>,
     /// The alphanumeric team identifier.
-    pub team_id: String,
+    pub team_id: Cow<'a, str>,
     /// The text message payload.
-    pub text: String,
+    pub text: Cow<'a, str>,
     /// The timestamp.
-    pub timestamp: String,
+    pub timestamp: Cow<'a, str>,
     /// The API token.
-    pub token: String,
+    pub token: Cow<'a, str>,
     /// The trigger of this request.
-    pub trigger: String,
+    pub trigger: Cow<'a, str>,
     /// The trigger user's alphanumeric identifier.
-    pub user_id: String,
+    pub user_id: Cow<'a, str>,
     /// The trigger user's username.
-    pub username: String,
+    pub username: Cow<'a, str>,
 }
 
-impl Request {
+impl<'a> Default for Request<'a> {
+    fn default() -> Request<'a> {
+        Request {
+            channel_id: Cow::Borrowed(""),
+            channel_name: Cow::Borrowed(""),
+            team_domain: Cow::Borrowed(""),
+            team_id: Cow::Borrowed(""),
+            text: Cow::Borrowed(""),
+            timestamp: Cow::Borrowed(""),
+            token: Cow::Borrowed(""),
+            trigger: Cow::Borrowed(""),
+            user_id: Cow::Borrowed(""),
+            username: Cow::Borrowed(""),
+        }
+    }
+}
+
+impl<'a> Request<'a> {
     fn from_bytes(b: &[u8]) -> Request {
         let mut req = Request::default();
         let query = post::parse(b);
 
         for (a, b) in query {
-            match a.as_str() {
+            match &*a {
                 "channel_id" => req.channel_id = b,
                 "channel_name" => req.channel_name = b,
                 "team_domain" => req.team_domain = b,
@@ -67,11 +84,11 @@ impl Request {
 /// The response to the request.
 pub struct Response<'a> {
     /// The bot's username.
-    pub username: Option<&'a str>,
+    pub username: Option<Cow<'a, str>,>,
     /// The payload text.
-    pub text: String,
+    pub text: Cow<'a, str>,
     /// The URL to the bot's avatar.
-    pub icon_url: Option<&'a str>,
+    pub icon_url: Option<Cow<'a, str>>,
 }
 
 impl<'a> Response<'a> {
