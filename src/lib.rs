@@ -1,15 +1,18 @@
-#![feature(str_escape)]
+#![feature(custom_derive, plugin)]
+#![plugin(serde_macros)]
 
 extern crate extra;
 extern crate hyper;
 extern crate url;
+extern crate serde;
+extern crate serde_json as json;
 
 use url::form_urlencoded as post;
 
 use extra::option::OptionalExt;
 
 use std::borrow::Cow;
-use std::io::{self, Write, Read};
+use std::io::{self, Read, Write};
 
 /// A Mattermost request.
 ///
@@ -82,33 +85,25 @@ impl<'a> Request<'a> {
 }
 
 /// The response to the request.
+#[derive(Serialize)]
 pub struct Response<'a> {
     /// The bot's username.
+    #[serde(skip_serializing_if="Option::is_none")]
     pub username: Option<Cow<'a, str>,>,
     /// The payload text.
     pub text: Cow<'a, str>,
     /// The URL to the bot's avatar.
+    #[serde(skip_serializing_if="Option::is_none")]
     pub icon_url: Option<Cow<'a, str>>,
 }
 
 impl<'a> Response<'a> {
     fn send<W: Write>(self, mut to: W) -> io::Result<()> {
-        try!(to.write_all(b"{\"text\": \""));
-        try!(to.write_all(self.text.escape_default().as_bytes()));
-        try!(to.write_all(b"\""));
-        if let Some(x) = self.username {
-            try!(to.write_all(b", \"username\": \""));
-            try!(to.write_all(x.escape_default().as_bytes()));
-            try!(to.write_all(b"\""));
+        match json::to_writer(&mut to, &self) {
+            Ok(()) => Ok(()),
+            Err(json::Error::Io(x)) => Err(x),
+            Err(x) => Err(io::Error::new(io::ErrorKind::InvalidData, x)),
         }
-        if let Some(x) = self.icon_url {
-            try!(to.write_all(b", \"icon_url\": \""));
-            try!(to.write_all(x.escape_default().as_bytes()));
-            try!(to.write_all(b"\""));
-        }
-        try!(to.write_all(b"}"));
-
-        Ok(())
     }
 }
 
@@ -140,7 +135,7 @@ impl<'a, F> Bot<F> where F: 'static + Sync + Send + Fn(Request) -> Response<'a> 
 
             let trig = Request::from_bytes(&vec);
             if &trig.token != self.token {
-                let _ = stderr.write_all(b"warning: token mismatch.");
+                let _ = write!(stderr, "warning: token mismatch.");
 
                 // Token mismatch.
                 *res.status_mut() = hyper::status::StatusCode::Unauthorized;

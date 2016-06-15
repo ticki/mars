@@ -5,6 +5,9 @@ authors = ["Ticki <Ticki@users.noreply.github.com>"]
 
 [dependencies]
 hyper = "0.8.0"
+serde = "0.7.10"
+serde_json = "0.7.1"
+serde_macros = "0.7.10"
 
 [dependencies.url]
 git = "https://github.com/servo/rust-url"
