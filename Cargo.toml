@@ -2,16 +2,21 @@
 name = "mars"
 version = "0.1.0"
 authors = ["Ticki <Ticki@users.noreply.github.com>"]
+description = "A Mattermost and Slack API wrapper."
+repository = "https://github.com/ticki/mars"
+documentation = "https://docs.rs/crate/mars"
+license = "MIT"
+keywords = ["mattermost", "slack", "api", "chat", "bot"]
+exclude = ["target", "Cargo.lock"]
 
 [dependencies]
-hyper = "0.8.0"
-serde = "0.7.10"
-serde_json = "0.7.1"
-serde_macros = "0.7.10"
+hyper = "0.8"
+serde = "0.7"
+serde_json = "0.7"
+serde_macros = "0.7"
+extra = "0.1"
 
 [dependencies.url]
-git = "https://github.com/servo/rust-url"
+version = "1.1"
 features = ["query_encoding"]
 
-[dependencies.extra]
-git = "https://github.com/redox-os/libextra"
