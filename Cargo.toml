@@ -1,5 +1,5 @@
 [package]
-name = "mars"
+name = "mars2"
 version = "0.1.0"
 authors = ["Ticki <Ticki@users.noreply.github.com>"]
 description = "A Mattermost and Slack API wrapper."
@@ -10,13 +10,13 @@ keywords = ["mattermost", "slack", "api", "chat", "bot"]
 exclude = ["target", "Cargo.lock"]
 
 [dependencies]
-hyper = "0.8"
-serde = "0.7"
-serde_json = "0.7"
-serde_macros = "0.7"
-extra = "0.1"
+hyper = "0"
+serde = "0"
+serde_json = "0"
+serde_macros = "0"
+extra = "0"
 
 [dependencies.url]
-version = "1.1"
+version = "1"
 features = ["query_encoding"]
 
